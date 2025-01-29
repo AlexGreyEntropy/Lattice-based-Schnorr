@@ -1,0 +1,13 @@
+[package]
+name = "post-quantum-extension"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+solana-program = "1.16.0"
+spl-token-2022 = "0.6.0"
+pqcrypto-traits = "0.1.0"
+pqcrypto-dilithium = "0.1.0" # Example used: Dilithium for post-quantum signatures
+
+[lib]
+crate-type = ["cdylib", "lib"]
