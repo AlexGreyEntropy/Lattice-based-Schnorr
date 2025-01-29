@@ -1,2 +1,9 @@
 [target.bpfel-unknown-unknown.dependencies.std]
 features = []
+
+# Add dependencies for post-quantum cryptography libraries
+[dependencies.pqcrypto-traits]
+version = "0.1.0"
+
+[dependencies.pqcrypto-dilithium]
+version = "0.1.0"
