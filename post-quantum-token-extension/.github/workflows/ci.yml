@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Solana Tool Suite
+        run: sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+      - name: Build
+        run: cargo build-bpf
+      - name: Test
+        run: cargo test
