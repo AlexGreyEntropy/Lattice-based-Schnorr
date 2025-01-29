@@ -1,68 +1,96 @@
-use solana_program::{
-    account_info::{AccountInfo, next_account_info},
-    entrypoint,
-    entrypoint::ProgramResult,
-    msg,
-    program_error::ProgramError,
-    pubkey::Pubkey,
-};
-use spl_token_2022::extension::{Extension, ExtensionType};
-use pqcrypto_dilithium::dilithium5::{verify, PublicKey, Signature};
+use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token};
+use std::convert::TryInto;
 
-#[derive(Clone, Debug, Default)]
-struct PostQuantumExtension {
-    post_quantum_pubkey: Vec<u8>, // Store the post-quantum public key
-}
+declare_id!("YOUR_PROGRAM_ID");
 
-impl Extension for PostQuantumExtension {
-    fn size() -> usize {
-        2592 // Size for Dilithium5 public key
-    }
+#[program]
+pub mod post_quantum_token {
+    use super::*;
 
-    fn initialize(&mut self, accounts: &[AccountInfo]) -> ProgramResult {
-        let account_info_iter = &mut accounts.iter();
-        let post_quantum_pubkey_account = next_account_info(account_info_iter)?;
-
-        // Load the post-quantum public key from the account data
-        self.post_quantum_pubkey = post_quantum_pubkey_account.data.borrow().to_vec();
+    // Initialize a new token with post-quantum security
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        params: InitializeParams,
+    ) -> Result<()> {
+        // Implementation for token initialization
+        let token_account = &mut ctx.accounts.token_account;
+        token_account.authority = ctx.accounts.authority.key();
+        token_account.parameters = params;
         Ok(())
     }
 
-    fn verify_signature(&self, signature: &[u8], message: &[u8]) -> ProgramResult {
-        let public_key = PublicKey::from_bytes(&self.post_quantum_pubkey).map_err(|_| ProgramError::InvalidArgument)?;
-        let signature = Signature::from_bytes(signature).map_err(|_| ProgramError::InvalidArgument)?;
+    // Sign a message using Lattice-based Schnorr
+    pub fn sign_message(
+        ctx: Context<SignMessage>,
+        message: Vec<u8>,
+    ) -> Result<()> {
+        // Implementation for message signing
+        let signature = generate_lattice_schnorr_signature(&message, &ctx.accounts.signer)?;
+        emit!(SignatureEvent {
+            signer: ctx.accounts.signer.key(),
+            message,
+            signature,
+        });
+        Ok(())
+    }
 
-        if verify(message, &signature, &public_key) {
-            Ok(())
-        } else {
-            msg!("Post-quantum signature verification failed");
-            Err(ProgramError::InvalidArgument)
-        }
+    // Verify a signature
+    pub fn verify_signature(
+        ctx: Context<VerifySignature>,
+        message: Vec<u8>,
+        signature: Vec<u8>,
+    ) -> Result<()> {
+        // Implementation for signature verification
+        verify_lattice_schnorr_signature(&message, &signature, &ctx.accounts.public_key)?;
+        Ok(())
     }
 }
 
-entrypoint!(process_instruction);
-fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    instruction_data: &[u8],
-) -> ProgramResult {
-    // Parse instruction data
-    let instruction = instruction_data[0];
-    match instruction {
-        0 => {
-            // Initialize the post-quantum extension
-            let mut extension = PostQuantumExtension::default();
-            extension.initialize(accounts)?;
-        }
-        1 => {
-            // Verify a post-quantum signature
-            let extension = PostQuantumExtension::default();
-            let signature = &instruction_data[1..2593]; // Adjust based on signature size
-            let message = &instruction_data[2593..];
-            extension.verify_signature(signature, message)?;
-        }
-        _ => return Err(ProgramError::InvalidInstructionData),
-    }
-    Ok(())
+#[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 32 + std::mem::size_of::<InitializeParams>()
+    )]
+    pub token_account: Account<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SignMessage<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(mut)]
+    pub token_account: Account<'info, TokenAccount>,
+}
+
+#[derive(Accounts)]
+pub struct VerifySignature<'info> {
+    pub token_account: Account<'info, TokenAccount>,
+    /// CHECK: Public key for verification
+    pub public_key: UncheckedAccount<'info>,
+}
+
+#[account]
+pub struct TokenAccount {
+    pub authority: Pubkey,
+    pub parameters: InitializeParams,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct InitializeParams {
+    pub lattice_dimension: u32,
+    pub modulus: u32,
+    pub security_parameter: u32,
+}
+
+#[event]
+pub struct SignatureEvent {
+    pub signer: Pubkey,
+    pub message: Vec<u8>,
+    pub signature: Vec<u8>,
 }
