@@ -1,22 +1,38 @@
-# Lattice-based-Schnorr
-# Post-Quantum Token Extension for Solana
+# Post-Quantum Token Extension
 
-This repository implements a post-quantum token extension for Solana's SPL Token 2022 program. It adds support for post-quantum signature verification (e.g lattice-based Schnorr signatures) to SPL tokens and NFTs.
+A Solana program implementing a lattice-based Schnorr signature scheme for post-quantum security.
+
+## Overview
+
+This project implements a post-quantum secure extension for Solana tokens using lattice-based cryptography. It provides a Schnorr signature scheme that is resistant to quantum computer attacks.
 
 ## Features
-- Post-quantum key registration.
-- Hybrid Ed25519 and post-quantum signature verification.
-- Custom token extension for SPL Token 2022.
 
-## Setup
-1. Install the Solana Tool Suite.
-2. Clone this repository.
-3. Build and deploy the program.
+- Lattice-based cryptography implementation
+- Post-quantum secure Schnorr signatures
+- Solana program integration
+- Compatible with existing token programs
 
-## Usage
-- Register a post-quantum public key with your token account.
-- Sign transactions with both Ed25519 and post-quantum keys.
-- The token extension verifies post-quantum signatures during transfers.
+## Prerequisites
+
+- Rust 1.68.0 or later
+- Solana CLI 1.14.17 or later
+- Node.js 14.0.0 or later (for tests)
+
+## Building
+
+bash
+cargo build-bpf
+
+## Testing
+
+bash
+cargo test-bpf
+
+## Security
+
+This implementation is experimental and has not been audited. Use at your own risk.
 
 ## License
-MIT
+
+MIT License
