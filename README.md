@@ -1,4 +1,4 @@
-# Post-Quantum Token Extension STILL IN PROGRESS
+# Post-Quantum Token Extension // STILL IN PROGRESS
 
 A Solana program implementing a lattice-based Schnorr signature scheme for post-quantum security.
 
